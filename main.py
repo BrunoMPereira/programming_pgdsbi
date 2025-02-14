@@ -168,35 +168,30 @@ def plot_data(X, y, colors):
     return
 
 if __name__ == "__main__":
+    # Seed for reproducibility
     np.random.seed(42)
-    X, y = generate_classification_dataset(200)
 
-    # Instantiate perceptrons with different probabilities
-    perceptron1 = Perceptron(iterations=100, learning_rate=0.01, error_iterations=5, probability=0.7, favor_class=1)
-    perceptron2 = Perceptron(iterations=100, learning_rate=0.01, error_iterations=5, probability=0.3, favor_class=1)
+    # Get inputs from the user
+    iterations, error_change, probability_check, favor_class, learning_rate, rows = get_inputs()
 
-    # Train both perceptrons
-    perceptron1.train(X, y)
-    perceptron2.train(X, y)
+    # Generate dataset
+    X, y = generate_classification_dataset(rows)
 
-    # Predict new classifications
-    predictions1 = np.array([1 if perceptron1.predict(sample) == 1 else 0 for sample in X])
-    predictions2 = np.array([1 if perceptron2.predict(sample) == 1 else 0 for sample in X])
+    # Initialize class
+    pp = Perceptron(iterations, learning_rate, error_change,probability_check,favor_class)
 
-    # Plot results
-    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
-    colors = ['blue', 'orange']
+    # Train model
+    pp.train(X,y)
+    
+    # Class colors to distinguish
+    class_colors = ['red', 'green'] 
+    class_colors_predict = ['blue', 'orange']
 
-    # First perceptron results
-    axes[0].set_title("Probability = 0.7")
-    for class_id in np.unique(predictions1):
-        class_points = X[predictions1 == class_id]
-        axes[0].scatter(class_points[:, 0], class_points[:, 1], color=colors[int(class_id)], alpha=0.6, edgecolors='k')
+    # Plot the first graph - original classes
+    plot_data(X, y, class_colors)
 
-    # Second perceptron results
-    axes[1].set_title("Probability = 0.3")
-    for class_id in np.unique(predictions2):
-        class_points = X[predictions2 == class_id]
-        axes[1].scatter(class_points[:, 0], class_points[:, 1], color=colors[int(class_id)], alpha=0.6, edgecolors='k')
+    # Plot the second graph - predicted classes
+    new_classes = np.array([1 if pp.predict(input) == 1 else 0 for input, _ in zip(X, y)])
+    plot_data(X, new_classes, class_colors_predict)
 
-    plt.show()
+
