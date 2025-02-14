@@ -3,8 +3,31 @@ import matplotlib.pyplot as plt
 
 
 class Perceptron():
-
+    """
+    A simple perceptron classifier with probabilistic activation selection.
+    
+    Attributes:
+        iterations (int): Number of training iterations.
+        learning_rate (float): Learning rate for weight updates.
+        error_iterations (int): Minimum number of classification errors to continue training.
+        weights (np.array): Weights for the perceptron.
+        bias (float): Bias term.
+        probability (float): Probability of favoring a certain class in ambiguous cases.
+        favor_class (int): The class (-1 or 1) to favor based on probability.
+        errors (list): Stores the error count at each iteration.
+    """
+    
     def __init__(self, iterations, learning_rate, error_iterations, probability, favor_class):
+        """
+        Initializes the perceptron with the given parameters.
+
+        Args:
+            iterations (int): Number of training iterations.
+            learning_rate (float): Learning rate for weight updates.
+            error_iterations (int): Minimum number of classification errors to continue training.
+            probability (float): Probability of favoring a certain class.
+            favor_class (int): The class to favor (0 or 1, converted to -1 or 1 internally).
+        """
         self.iterations = iterations
         self.learning_rate = learning_rate
         self.error_iterations = error_iterations
@@ -15,16 +38,28 @@ class Perceptron():
         self.errors = []
 
     def input_layer(self, input):
-        '''
-        First layer that can calculate the computation between weights, values and bias
-        '''
-        return sum(self.weights*input) + self.bias
+        """
+        Computes the weighted sum of inputs plus bias.
+
+        Args:
+            input (np.array): Input feature vector.
+
+        Returns:
+            float: Computed value from the input layer.
+        """
+        return sum(self.weights * input) + self.bias
     
     def activation_function(self, computed_value):
-        '''
-        Activation function that defines if the output from the input is -1 or 1.
-        Classification layer.
-        '''
+        """
+        Applies the activation function to classify the input.
+        Uses probabilistic selection to favor a specific class.
+
+        Args:
+            computed_value (float): The computed value from the input layer.
+
+        Returns:
+            int: Predicted class label (-1 or 1).
+        """
         deterministic = 1 if computed_value >= 0 else -1
         if deterministic == self.favor_class:
             prediction = self.favor_class if np.random.rand() < self.probability else -self.favor_class
@@ -33,36 +68,61 @@ class Perceptron():
         return prediction
     
     def predict(self, input):
+        """
+        Predicts the class label for a given input.
+
+        Args:
+            input (np.array): Input feature vector.
+
+        Returns:
+            int: Predicted class label (-1 or 1).
+        """
         return self.activation_function(self.input_layer(input))
     
     def loss_function(self, y, y_pred):
-        '''
-        Calculate the error between real and prediciton value.
-        In this case it will always output 0 or 1
-        '''
+        """
+        Computes the loss as the number of misclassifications.
+
+        Args:
+            y (int): True class label.
+            y_pred (int): Predicted class label.
+
+        Returns:
+            int: 1 if misclassified, 0 otherwise.
+        """
         return int(y != y_pred)
     
     def train(self, X, y):
-        y_treated = np.where(y>=1,1,-1)
+        """
+        Trains the perceptron using the given dataset.
+
+        Args:
+            X (np.array): Feature matrix.
+            y (np.array): Target labels.
+        """
+        y_treated = np.where(y >= 1, 1, -1)
         self.weights = np.zeros(X.shape[1])
         self.bias = 0
 
         for _ in range(self.iterations):
             total_error = 0
-            for row_X, i_y in zip(X,y_treated):
+            for row_X, i_y in zip(X, y_treated):
                 y_pred = self.predict(row_X)
-                self.weights += self.learning_rate*y_pred*row_X
-                self.bias += self.learning_rate*y_pred
-                total_error += self.loss_function(i_y,y_pred)
-            self.errors.append(total_error)
-            if total_error <= self.error_iterations:
-                print('Early Stopped.')
+                if i_y != y_pred:
+                    self.weights += self.learning_rate * i_y * row_X
+                    self.bias += self.learning_rate * i_y
+                total_error += self.loss_function(i_y, y_pred)
+            if len(self.errors) > 5 and np.mean(self.errors[-5:]) <= self.error_iterations:
+                print('Early Stopped (Stable Error Rate).')
                 break
 
 def get_inputs():
-    '''
-    Function to get inputs from user.
-    '''
+    """
+    Prompts the user to enter training parameters.
+
+    Returns:
+        tuple: (iterations, error_change, probability_check, favor_class, learning_rate, amostras)
+    """
     iterations = int(input('Número iterações: '))
     error_change = int(input('Número de erros na classificação mínimo para parar: '))
     probability_check = float(input('Probabilidade de escolher 1: '))
@@ -72,36 +132,38 @@ def get_inputs():
     return iterations, error_change, probability_check, favor_class, learning_rate, amostras
 
 def generate_classification_dataset(n_rows):
-    '''
-    Funtion to generate the dataset for study.
-    '''
+    """
+    Generates a synthetic classification dataset.
+
+    Args:
+        n_rows (int): Number of rows in the dataset.
+
+    Returns:
+        tuple: Feature matrix X and target labels y.
+    """
     X_class1 = np.random.randn(n_rows // 2, 2) + np.array([-3, -3])
     X_class2 = np.random.randn(n_rows // 2, 2) + np.array([3, 3])
-    # Vertical stack - one on top of the other
     X = np.vstack((X_class1, X_class2))
-    # Horizontal stack - one on top of the other
     y = np.hstack((np.zeros(n_rows // 2), np.ones(n_rows // 2)))
     return X, y
 
-
 def plot_data(X, y, colors):
-    ''''''
-    # Plot each class with a different color
-    for class_id in np.unique(y).tolist():  # Iterate over unique class labels
-        # Select points of the current class
+    """
+    Plots the dataset with different colors for each class.
+
+    Args:
+        X (np.array): Feature matrix.
+        y (np.array): Target labels.
+        colors (list): List of colors for each class.
+    """
+    for class_id in np.unique(y).tolist():  
         class_points = X[y == class_id]
-        
-        # Scatter plot for the current class
         plt.scatter(class_points[:, 0], class_points[:, 1], 
-                    label=f'Class {class_id}',  # Label for the legend
+                    label=f'Class {class_id}',  
                     alpha=0.6, 
                     edgecolors='k', 
                     color=colors[int(class_id)])
-    
-    # Add the legend
     plt.legend()
-
-    # Display the plot
     plt.show()
     return
 
@@ -109,14 +171,13 @@ if __name__ == "__main__":
     np.random.seed(42)
     iterations, error_change, probability_check, favor_class, learning_rate, linhas = get_inputs()
     X, y = generate_classification_dataset(linhas)
-    pp = Perceptron(iterations, learning_rate, error_change,probability_check,favor_class)
-    pp.train(X,y)
+    pp = Perceptron(iterations, learning_rate, error_change, probability_check, favor_class)
+    pp.train(X, y)
     
     class_colors = ['red', 'green'] 
-    class_colors_train = ['blue', 'orange']
-
+    class_colors_predict = ['blue', 'orange']
+    
     plot_data(X, y, class_colors)
     
-    new_classes = np.array([1 if pp.predict(input) == 1 else 0 for input, _ in zip(X, y)])
-    plot_data(X, new_classes, class_colors_train)
-    
+    new_classes = np.array([1 if pp.predict(sample) == 1 else 0 for sample, _ in zip(X, y)])
+    plot_data(X, new_classes, class_colors_predict)
