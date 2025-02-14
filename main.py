@@ -113,7 +113,7 @@ class Perceptron():
                     self.bias += self.learning_rate * i_y
                 total_error += self.loss_function(i_y, y_pred)
             if len(self.errors) > 5 and np.mean(self.errors[-5:]) <= self.error_iterations:
-                print('Early Stopped (Stable Error Rate).')
+                print('Early Stopped.')
                 break
 
 def get_inputs():
@@ -123,13 +123,13 @@ def get_inputs():
     Returns:
         tuple: (iterations, error_change, probability_check, favor_class, learning_rate, amostras)
     """
-    iterations = int(input('Número iterações: '))
-    error_change = int(input('Número de erros na classificação mínimo para parar: '))
-    probability_check = float(input('Probabilidade de escolher 1: '))
+    iterations = int(input('Number of iterations: '))
+    error_change = int(input('Average last 5 mismatch classifications: '))
+    probability_check = float(input('Probability to choose desired class: '))
     favor_class = int(input('Which class to favor based on probability (0 or 1): '))
     learning_rate = float(input('Learning Rate: '))
-    amostras = int(input('Número de linhas: '))
-    return iterations, error_change, probability_check, favor_class, learning_rate, amostras
+    samples = int(input('Number of rows of dataset: '))
+    return iterations, error_change, probability_check, favor_class, learning_rate, samples
 
 def generate_classification_dataset(n_rows):
     """
@@ -169,15 +169,34 @@ def plot_data(X, y, colors):
 
 if __name__ == "__main__":
     np.random.seed(42)
-    iterations, error_change, probability_check, favor_class, learning_rate, linhas = get_inputs()
-    X, y = generate_classification_dataset(linhas)
-    pp = Perceptron(iterations, learning_rate, error_change, probability_check, favor_class)
-    pp.train(X, y)
-    
-    class_colors = ['red', 'green'] 
-    class_colors_predict = ['blue', 'orange']
-    
-    plot_data(X, y, class_colors)
-    
-    new_classes = np.array([1 if pp.predict(sample) == 1 else 0 for sample, _ in zip(X, y)])
-    plot_data(X, new_classes, class_colors_predict)
+    X, y = generate_classification_dataset(200)
+
+    # Instantiate perceptrons with different probabilities
+    perceptron1 = Perceptron(iterations=100, learning_rate=0.01, error_iterations=5, probability=0.7, favor_class=1)
+    perceptron2 = Perceptron(iterations=100, learning_rate=0.01, error_iterations=5, probability=0.3, favor_class=1)
+
+    # Train both perceptrons
+    perceptron1.train(X, y)
+    perceptron2.train(X, y)
+
+    # Predict new classifications
+    predictions1 = np.array([1 if perceptron1.predict(sample) == 1 else 0 for sample in X])
+    predictions2 = np.array([1 if perceptron2.predict(sample) == 1 else 0 for sample in X])
+
+    # Plot results
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+    colors = ['blue', 'orange']
+
+    # First perceptron results
+    axes[0].set_title("Probability = 0.7")
+    for class_id in np.unique(predictions1):
+        class_points = X[predictions1 == class_id]
+        axes[0].scatter(class_points[:, 0], class_points[:, 1], color=colors[int(class_id)], alpha=0.6, edgecolors='k')
+
+    # Second perceptron results
+    axes[1].set_title("Probability = 0.3")
+    for class_id in np.unique(predictions2):
+        class_points = X[predictions2 == class_id]
+        axes[1].scatter(class_points[:, 0], class_points[:, 1], color=colors[int(class_id)], alpha=0.6, edgecolors='k')
+
+    plt.show()
