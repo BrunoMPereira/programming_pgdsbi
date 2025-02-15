@@ -47,7 +47,7 @@ class Perceptron():
         Returns:
             float: Computed value from the input layer.
         """
-        return sum(self.weights * input) + self.bias
+        return np.dot(self.weights,input) + self.bias
     
     def activation_function(self, computed_value):
         """
@@ -170,7 +170,7 @@ def plot_data(X, y, colors):
 if __name__ == "__main__":
     # Seed for reproducibility
     np.random.seed(42)
-    
+
     # Get inputs from the user
     iterations, error_change, probability_check, favor_class, learning_rate, rows = get_inputs()
 
