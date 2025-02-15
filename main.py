@@ -170,7 +170,7 @@ def plot_data(X, y, colors):
 if __name__ == "__main__":
     # Seed for reproducibility
     np.random.seed(42)
-
+    
     # Get inputs from the user
     iterations, error_change, probability_check, favor_class, learning_rate, rows = get_inputs()
 
@@ -193,5 +193,3 @@ if __name__ == "__main__":
     # Plot the second graph - predicted classes
     new_classes = np.array([1 if pp.predict(input) == 1 else 0 for input, _ in zip(X, y)])
     plot_data(X, new_classes, class_colors_predict)
-
-
